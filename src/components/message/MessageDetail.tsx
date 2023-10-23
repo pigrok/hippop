@@ -1,16 +1,12 @@
 import React from 'react';
 // 라이브러리
 import moment from 'moment';
-// zustand 상태관리 hook
-import { useCurrentUser } from '../../store/userStore';
 // 타입
 import { MsgDetailType } from '../../types/props';
-// 스타일
-import { styled } from 'styled-components';
+// style
+import { St } from './style/St.MessageDetail';
 
 const MessageDetail = ({ selectedMessage, setIsClicked, setReplyModal, toggleMsgBox }: MsgDetailType) => {
-  const currentUser = useCurrentUser();
-
   // 메세지 상세 닫기
   const closeDetail = () => {
     setIsClicked(false);
@@ -22,77 +18,45 @@ const MessageDetail = ({ selectedMessage, setIsClicked, setReplyModal, toggleMsg
   };
 
   return (
-    <Container>
-      {toggleMsgBox === '받은 쪽지함' ? (
-        <ProfileBox>
-          {toggleMsgBox === '받은 쪽지함' ? '발신자' : '수신자'}
-          {selectedMessage?.to.avatar_url && selectedMessage.to.avatar_url.startsWith('profile/') ? (
-            <Img
-              src={`${process.env.REACT_APP_SUPABASE_STORAGE_URL}${selectedMessage.to.avatar_url}`}
-              alt="User Avatar"
-            />
-          ) : (
-            <>{currentUser && <Img src={selectedMessage?.to.avatar_url} alt="User Avatar" />}</>
-          )}
-          <div>{selectedMessage?.to.name}</div>
-        </ProfileBox>
-      ) : (
-        <ProfileBox>
-          {toggleMsgBox === '받은 쪽지함' ? '발신자' : '수신자'}
-          {selectedMessage?.to.avatar_url && selectedMessage.to.avatar_url.startsWith('profile/') ? (
-            <Img
-              src={`${process.env.REACT_APP_SUPABASE_STORAGE_URL}${selectedMessage.to.avatar_url}`}
-              alt="User Avatar"
-            />
-          ) : (
-            <>{currentUser && <Img src={selectedMessage?.to.avatar_url} alt="User Avatar" />}</>
-          )}
-          <div>{selectedMessage?.to.name}</div>
-        </ProfileBox>
-      )}
-      <RecieveTime> 받은시간: {moment(selectedMessage?.created_at).format('YYYY-MM-DD HH:mm:ss')}</RecieveTime>
-      <BodyBox>{selectedMessage?.body}</BodyBox>
-      {toggleMsgBox === '받은 쪽지함' ? <button onClick={clickOpenReply}>답장하기</button> : <div></div>}
+    <St.Container>
+      <div className="header-wrapper">
+        {toggleMsgBox === '받은 쪽지함' ? (
+          <St.ProfileBox>
+            {toggleMsgBox === '받은 쪽지함' ? '' : ''}
+            {selectedMessage?.to.avatar_url && (
+              <St.Img
+                src={`${process.env.REACT_APP_SUPABASE_STORAGE_URL}${selectedMessage.to.avatar_url}`}
+                alt="User Avatar"
+              />
+            )}
 
-      <button onClick={closeDetail}> 창닫기</button>
-    </Container>
+            <h4>{selectedMessage?.to.name}</h4>
+          </St.ProfileBox>
+        ) : (
+          <St.ProfileBox>
+            {toggleMsgBox === '받은 쪽지함' ? '' : ''}
+            {selectedMessage?.to.avatar_url && (
+              <St.Img
+                src={`${process.env.REACT_APP_SUPABASE_STORAGE_URL}${selectedMessage.to.avatar_url}`}
+                alt="User Avatar"
+              />
+            )}
+
+            <h4>{selectedMessage?.to.name}</h4>
+          </St.ProfileBox>
+        )}
+
+        <St.RecieveTime> 받은시간: {moment(selectedMessage?.created_at).format('YYYY-MM-DD HH:mm:ss')}</St.RecieveTime>
+      </div>
+      <div className="boxBtn-wrapper">
+        <St.BodyBox>{selectedMessage?.body}</St.BodyBox>
+        <span>
+          {toggleMsgBox === '받은 쪽지함' ? <button onClick={clickOpenReply}>답장하기</button> : <div></div>}
+          <button onClick={closeDetail}> 창닫기</button>
+        </span>
+      </div>
+    </St.Container>
   );
 };
 
 export default MessageDetail;
-
-const Container = styled.div`
-  overflow-y: hidden;
-  position: relative;
-`;
-
-const ProfileBox = styled.div`
-  display: flex;
-
-  align-items: center;
-  border: 1px solid black;
-
-  margin-top: 6px;
-`;
-
-const RecieveTime = styled.div`
-  border: 1px solid black;
-  padding: 5px;
-  margin-top: 6px;
-`;
-
-const Img = styled.img`
-  width: 30px;
-  height: 30px;
-  object-fit: cover;
-  border-radius: 50%;
-`;
-
-const BodyBox = styled.div`
-  width: 500px;
-  height: 220px;
-
-  border: 1px solid black;
-
-  margin-top: 10px;
-`;

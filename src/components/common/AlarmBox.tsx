@@ -1,25 +1,20 @@
-import { useEffect, useState } from 'react';
-// 라이브러리
-import { useNavigate } from 'react-router';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import moment from 'moment';
 import 'moment/locale/ko'; // 한국어 설정
-// api
-import { deleteAlarm, getAlarms } from '../../api/alarm';
-// zustand
-import { useCurrentUser } from '../../store/userStore';
-// 타입
+import moment from 'moment';
+import shortid from 'shortid';
+import { useNavigate } from 'react-router';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+
 import { AlarmType } from '../../types/types';
-// 스타일
-import { styled } from 'styled-components';
-// mui
-import DeleteIcon from '@mui/icons-material/Delete';
 import { AlarmBoxProps } from '../../types/props';
+import { deleteAlarm } from '../../api/alarm';
+import { useCurrentUser } from '../../store/userStore';
+
+import { St } from './style/St.AlarmBox';
+import { toast } from 'react-toastify';
 
 const AlarmBox = ({ alarms }: AlarmBoxProps) => {
   const navigate = useNavigate();
   const currentUser = useCurrentUser();
-  const currentUserId = currentUser?.id;
 
   // 알람은 무조건 5개만
   const AlarmList = alarms?.slice(0, 5);
@@ -45,9 +40,8 @@ const AlarmBox = ({ alarms }: AlarmBoxProps) => {
     }
   };
 
-  const queryClient = useQueryClient();
-
   // 알람 삭제
+  const queryClient = useQueryClient();
   const deleteMutation = useMutation(deleteAlarm, {
     onSuccess: () => {
       queryClient.invalidateQueries(['alarms']);
@@ -63,79 +57,41 @@ const AlarmBox = ({ alarms }: AlarmBoxProps) => {
   const naviAlarm = (alarm: AlarmType) => {
     // 새 게시글
     if (alarm.ctg_index === 1) {
-      return navigate(`rdetail/${alarm.post_id}`);
+      if (alarm.post_isdeleted === false) {
+        return toast.info('삭제된 게시물 입니다!', {
+          className: 'custom-toast',
+          theme: 'light'
+        });
+      } else return navigate(`rdetail/${alarm.post_id}`);
     }
     // 구독
     if (alarm.ctg_index === 2) {
-      return navigate(`/mypage/${alarm.sub_from}`);
+      return navigate(`/yourpage/${shortid.generate()}`, { state: { userId: alarm.sub_from } });
     }
     // 쪽지
     if (alarm.ctg_index === 3) {
-      return navigate(`/mypage/${alarm.targetUserId}`);
+      return navigate(`/mypage/${shortid.generate()}`, { state: { userId: currentUser?.id } });
     }
   };
 
   return (
     <>
-      <AlarmContainer>
+      <St.AlarmContainer>
         {AlarmList?.map((alarm) => {
           const timeAgo = formatTimeAgo(alarm.created_at);
           return (
-            <AlarmContents key={alarm.id}>
-              <AlarmTime>{timeAgo}</AlarmTime>
-              <AlarmInfo>
+            <St.AlarmContents key={alarm.id}>
+              <St.AlarmTime>{timeAgo}</St.AlarmTime>
+              <St.AlarmInfo>
                 <div onClick={() => naviAlarm(alarm)}>{alarm.content}</div>
-                <AlarmDeleteIcon onClick={() => deleteButton(alarm.id)} />
-              </AlarmInfo>
-            </AlarmContents>
+                <St.AlarmDeleteIcon onClick={() => deleteButton(alarm.id)} />
+              </St.AlarmInfo>
+            </St.AlarmContents>
           );
         })}
-      </AlarmContainer>
+      </St.AlarmContainer>
     </>
   );
 };
 
 export default AlarmBox;
-
-const AlarmContainer = styled.li`
-  position: absolute;
-  top: 19px;
-  right: -285px;
-  list-style: none;
-  color: black;
-  background-color: white;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid var(--fifth-color);
-  border-radius: 5px;
-  z-index: 1;
-`;
-
-const AlarmContents = styled.div`
-  width: 280px;
-  /* border-bottom: 1px solid #a7a7a79d; */
-  font-size: 14px;
-  text-align: left;
-  padding: 10px;
-  cursor: pointer;
-
-  &:hover {
-    background-color: var(--sixth-color);
-  }
-`;
-
-const AlarmTime = styled.span`
-  font-size: 10px;
-  color: #686868;
-`;
-
-const AlarmInfo = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-`;
-
-const AlarmDeleteIcon = styled(DeleteIcon)`
-  &:hover {
-    color: var(--primary-color);
-  }
-`;

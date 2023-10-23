@@ -1,13 +1,14 @@
-import Posts from '../components/community/main/Posts';
+import MPosts from '../components/community/main/mate/MPosts';
 import Write from '../components/community/write/Write';
 import SearchModal from '../components/community/write/SearchModal';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
+import { St } from './style/St.Mate';
 import { Store } from '../types/types';
 import { useCurrentUser } from '../store/userStore';
-
-import { styled } from 'styled-components';
 
 const Mate = () => {
   const [writeModal, setWriteModal] = useState<boolean>(false);
@@ -21,19 +22,32 @@ const Mate = () => {
   // 검색 모달 열기
   const searcButton = () => {
     if (!currentUser) {
-      return alert('로그인 해주세요.');
+      toast.info('로그인 해주세요. :)', {
+        className: 'custom-toast',
+        theme: 'light'
+      });
+      return;
     }
     setSearchModal(true);
+    document.body.style.overflow = 'hidden';
   };
-
+  useEffect(() => {
+    return () => {
+      window.scroll({
+        top: 0,
+        left: 0,
+        behavior: 'smooth'
+      });
+    };
+  }, []);
   return (
-    <Layout>
-      <TitleBox>
-        <Title>같이 팝업스토어 가실 분! XD</Title>
-      </TitleBox>
-      <ButtonBox>
-        <Button onClick={searcButton}>팝업메이트 찾기</Button>
-      </ButtonBox>
+    <St.Layout>
+      <St.TitleBox>
+        <St.Title>같이 팝업스토어 가실 분! XD</St.Title>
+      </St.TitleBox>
+      <St.ButtonBox>
+        <St.Button onClick={searcButton}>팝업메이트 찾기</St.Button>
+      </St.ButtonBox>
       <SearchModal
         keyword={keyword}
         setKeyword={setKeyword}
@@ -54,45 +68,9 @@ const Mate = () => {
         storeTitle={storeTitle}
         setResult={setResult}
       />
-      <Posts />
-    </Layout>
+      <MPosts />
+    </St.Layout>
   );
 };
 
 export default Mate;
-
-const Layout = styled.div`
-  min-width: 900px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-`;
-
-const TitleBox = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-`;
-
-const Title = styled.h1`
-  color: var(--fifth-color);
-  font-size: 28px;
-  font-style: normal;
-  font-weight: 400;
-  margin: 70px;
-  background: linear-gradient(to top, var(--third-color) 50%, transparent 50%);
-`;
-
-const ButtonBox = styled.div`
-  min-width: 900px;
-  display: flex;
-  justify-content: flex-end;
-`;
-
-const Button = styled.button`
-  width: 150px;
-  height: 40px;
-  font-weight: 700;
-  margin-bottom: 5px;
-`;

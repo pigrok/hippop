@@ -3,14 +3,18 @@ import Writer from '../components/community/detail/Writer';
 import Comments from '../components/community/detail/Comments';
 
 import moment from 'moment';
-import { useState } from 'react';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { useCurrentUser } from '../store/userStore';
 import { deletePost, getPost } from '../api/post';
+import { useCurrentUser } from '../store/userStore';
 
-import { styled } from 'styled-components';
+import { St } from './style/St.MDetail';
+import { Skeleton } from '@mui/material';
+import RoomRoundedIcon from '@mui/icons-material/RoomRounded';
 
 const MDetail = () => {
   const { id } = useParams();
@@ -40,8 +44,10 @@ const MDetail = () => {
       deleteMutation.mutate(id);
 
       // 상세페이지 모달 창 닫기
-      alert('삭제되었습니다!');
-
+      toast.info('삭제되었습니다 ! :)', {
+        className: 'custom-toast',
+        theme: 'light'
+      });
       // 메인 페이지로 이동
       navigate('/review');
     }
@@ -50,134 +56,108 @@ const MDetail = () => {
   // Post 수정
   const editButton = () => {
     setIsEdit(!isEdit);
+    document.body.style.overflow = 'hidden';
   };
 
+  useEffect(() => {
+    return () => {
+      window.scroll({
+        top: 0,
+        left: 0,
+        behavior: 'smooth'
+      });
+    };
+  }, []);
+
   if (isLoading) {
-    return <div>로딩중입니다.</div>;
+    return (
+      <div>
+        {' '}
+        <St.Layout>
+          <St.CategoryBox>
+            <div>
+              <Skeleton variant="text" width={100} height={30} />
+            </div>
+            <St.ButtonBox>
+              <div style={{ marginRight: '20px', marginBottom: '23px' }}></div>
+              <div style={{ marginRight: '12px', marginBottom: '23px' }}></div>
+            </St.ButtonBox>
+          </St.CategoryBox>
+          {/* 글 내용 */}
+          <div>
+            <div className="ql-snow">
+              <St.HeadContainer>
+                <St.TextBox>
+                  <St.StoreBox>
+                    <Skeleton variant="text" width={300} height={30} />
+                  </St.StoreBox>
+                  <Skeleton variant="text" width={100} height={30} />
+                </St.TextBox>
+                <Skeleton variant="text" width={300} height={30} />
+              </St.HeadContainer>
+              <Skeleton variant="text" width={850} height={500} />
+            </div>
+          </div>
+          <Skeleton variant="text" width={850} height={100} />
+          {/* 댓글 목록 */}
+          <div>
+            <St.ButtonBox></St.ButtonBox>
+            <Skeleton variant="text" width={870} height={80} />
+            <St.ButtonBox></St.ButtonBox>
+            <Skeleton variant="text" width={870} height={80} />
+          </div>
+          {/* 더보기 버튼 */}
+        </St.Layout>
+      </div>
+    );
   }
   if (isError) {
     return <div>오류가 발생했습니다.</div>;
   }
   return (
-    <Layout>
-      <CategoryBox>
-        <Category>
-          <TitleLine>Mate</TitleLine>
-        </Category>
-        {currentUser?.id === post.user_id && (
-          <ButtonBox>
-            <Button onClick={() => deleteButton(post.id)} style={{ marginRight: '10px' }}>
-              삭제
-            </Button>
-            <Button onClick={editButton}>수정</Button>
-          </ButtonBox>
-        )}
-      </CategoryBox>
-      {post && (
-        <>
-          {/* 글 내용 */}
-          <div>
-            {isEdit ? (
-              <Edit
-                postId={post.id}
-                postTitle={post.title}
-                postBody={post.body}
-                isEdit={isEdit}
-                setIsEdit={setIsEdit}
-              />
-            ) : (
-              <>
-                <div className="ql-snow">
-                  <HeadContainer>
-                    <TextBox>
-                      <Text>{post.store.title}</Text>
-                      <Text>{formatDate}</Text>
-                    </TextBox>
-                    <Title>제목 : {post.title}</Title>
-                  </HeadContainer>
-                  <Body className="ql-editor" dangerouslySetInnerHTML={{ __html: post.body }} />
-                </div>
-              </>
-            )}
-          </div>
-          {/* 작성자 */}
-          {isEdit ? <></> : <Writer writer={post.user} postId={postId} />}
-          {/* 댓글 */}
-          {isEdit ? <></> : <Comments postId={post.id} />}
-        </>
+    <>
+      {isEdit && (
+        <Edit postId={post.id} postTitle={post.title} postBody={post.body} isEdit={isEdit} setIsEdit={setIsEdit} />
       )}
-    </Layout>
+      <St.Layout>
+        <St.CategoryBox>
+          <St.Category>
+            <St.TitleLine>Mate</St.TitleLine>
+          </St.Category>
+          {currentUser?.id === post.user_id && (
+            <St.ButtonBox>
+              <St.Button onClick={() => deleteButton(post.id)} style={{ marginRight: '10px' }}>
+                삭제
+              </St.Button>
+              <St.Button onClick={editButton}>수정</St.Button>
+            </St.ButtonBox>
+          )}
+        </St.CategoryBox>
+        {post && (
+          <>
+            {/* 글 내용 */}
+            <St.HeadContainer>
+              <St.TextBox>
+                <St.StoreBox>
+                  <RoomRoundedIcon /> &nbsp;
+                  <St.Text>{post.store.title}</St.Text>
+                </St.StoreBox>
+                <St.Text>{formatDate}</St.Text>
+              </St.TextBox>
+              <St.Title>{post.title}</St.Title>
+            </St.HeadContainer>
+            <St.BodyContainer className="ql-snow">
+              <St.Body className="ql-editor" dangerouslySetInnerHTML={{ __html: post.body }} />
+            </St.BodyContainer>
+            {/* 작성자 */}
+            <Writer writer={post.user} postId={postId} />
+            {/* 댓글 */}
+            <Comments postId={post.id} />
+          </>
+        )}
+      </St.Layout>
+    </>
   );
 };
 
 export default MDetail;
-
-const Layout = styled.div`
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-`;
-
-const CategoryBox = styled.div`
-  width: 900px;
-  display: flex;
-  justify-content: space-between;
-`;
-
-const Category = styled.h1`
-  color: var(--fifth-color);
-  margin: 30px 0 10px 0;
-  padding-bottom: 5px;
-  font-size: 24px;
-  float: left;
-  background: linear-gradient(to top, var(--third-color) 50%, transparent 50%);
-`;
-
-const TitleLine = styled.span`
-  padding: 2px;
-  background: linear-gradient(to top, var(--third-color) 50%, transparent 50%);
-`;
-
-const ButtonBox = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin: 20px 0px;
-`;
-
-const Button = styled.button`
-  width: 80px;
-  height: 35px;
-  font-weight: 600;
-  color: var(--second-color);
-  background-color: var(--third-color);
-`;
-
-const HeadContainer = styled.div`
-  width: 900px;
-`;
-
-const TextBox = styled.div`
-  display: flex;
-  justify-content: space-between;
-  padding: 30px 0 10px 0;
-  border-bottom: 2px dashed var(--fifth-color);
-`;
-
-const Text = styled.div`
-  font-size: 16px;
-  font-weight: 600;
-`;
-
-const Title = styled.div`
-  font-size: 26px;
-  font-weight: 600;
-  float: left;
-  padding: 10px 0 30px 0;
-`;
-
-const Body = styled.div`
-  width: 900px;
-  margin: 20px 0;
-`;

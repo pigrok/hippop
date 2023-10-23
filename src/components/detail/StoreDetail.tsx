@@ -1,9 +1,11 @@
+import { useEffect, useRef, useState } from 'react';
 // 라이브러리
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
+import CopyToClipboard from 'react-copy-to-clipboard';
 // 타입
 import { Store } from '../../types/types';
 // api
@@ -13,42 +15,165 @@ import Share from './Share';
 import Calendar from './Calendar';
 import BookMark from './BookMark';
 import StoreMap from './StoreMap';
-// 스타일
-import { styled } from 'styled-components';
 // mui
-import InsertLinkIcon from '@mui/icons-material/InsertLink';
+import IosShareIcon from '@mui/icons-material/IosShare';
+import { Skeleton } from '@mui/material';
+//alert
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+// 스타일
+import { St } from './style/St.StoreDetail';
 
 const StoreDetail = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const calendarRef = useRef<HTMLDivElement | null>(null);
+
+  const [isClicked, setIsClicked] = useState<boolean>(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   const {
     data: storeData,
     isLoading,
-    isError
-  } = useQuery<Store | null>({ queryKey: ['detailData', Number(id)], queryFn: () => fetchDetailData(Number(id)) });
+    isError,
+    refetch
+  } = useQuery<Store | null>({
+    queryKey: ['detailData', Number(id)],
+    queryFn: () => fetchDetailData(Number(id))
+    // refetchOnWindowFocus: true
+  });
+
+  useEffect(() => {
+    // 컴포넌트가 마운트될 때 실행되는 부분
+    refetch();
+
+    const handleCalendarWindowClick = (event: MouseEvent) => {
+      if (!calendarRef.current?.contains(event.target as Node)) {
+        setIsClicked(false);
+      }
+    };
+
+    window.addEventListener('click', handleCalendarWindowClick);
+    return () => {
+      window.removeEventListener('click', handleCalendarWindowClick);
+      window.scroll({
+        top: 0,
+        left: 0,
+        behavior: 'smooth'
+      });
+    };
+  }, [id]);
+
+  const open = Boolean(anchorEl);
+
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
 
   const handleopenlink = (link: string) => {
     window.open(link, '_blank');
   };
 
+  const handleMouseEnter = () => setIsClicked(!isClicked);
+
   const settings = {
     slidesToShow: 1,
     slidesToScroll: 1,
-    arrows: true,
+    arrows: false,
     dots: true,
-    infinite: true
+    infinite: true,
+    autoplay: true,
+    autoplaySpeed: 2000,
+    pauseOnFocus: true
   };
+  useEffect(() => {
+    return () => {
+      window.scroll({
+        top: 0,
+        left: 0,
+        behavior: 'smooth'
+      });
+    };
+  }, []);
+  if (isLoading) {
+    return (
+      <div>
+        <St.DetailContainer>
+          <div>
+            <div className="store-detail">
+              <div className="image-slider">
+                <Skeleton variant="rectangular" width={600} height={600} />
+              </div>
+              <div className="store-info">
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Skeleton variant="text" width={300} height={30} />
+                  <div style={{ marginLeft: '300px' }}>
+                    <Skeleton variant="text" width={30} height={30} />
+                  </div>
+                </div>
 
-  if (isError) {
-    return <div>데이터를 가져오는 도중 오류가 발생했습니다.</div>;
+                <div className="store-body">
+                  <Skeleton variant="text" width={300} height={30} />
+                </div>
+                <div className="store-text">
+                  <div>
+                    <Skeleton variant="text" width={300} height={30} />
+                  </div>
+                  <div>
+                    <Skeleton variant="text" width={300} height={30} />
+                    <div style={{ margin: 0 }} ref={calendarRef}></div>
+                  </div>
+                  <div>
+                    <Skeleton variant="text" width={300} height={30} />
+                  </div>
+                  <div>
+                    <Skeleton variant="text" width={300} height={30} />
+                  </div>
+                  <div>
+                    <Skeleton variant="text" width={130} height={30} />
+                    <Skeleton variant="text" width={130} height={30} />
+                    <Skeleton variant="text" width={130} height={30} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
+            <Skeleton variant="text" width={400} height={30} />
+            <div style={{ display: 'flex' }}>
+              <Skeleton variant="text" width={90} height={30} />
+              <div style={{ margin: '0 15px 0 15px' }}>
+                <Skeleton variant="text" width={90} height={30} />
+              </div>
+
+              <Skeleton variant="text" width={90} height={30} />
+            </div>
+            <Skeleton variant="text" width={`100%`} height={800} />
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
+            <Skeleton variant="text" width={90} height={30} />
+            <div style={{ display: 'flex' }}>
+              <Skeleton variant="text" width={400} height={800} />
+              <div style={{ margin: '0 15px 0 15px' }}>
+                <Skeleton variant="text" width={400} height={800} />
+              </div>
+              <Skeleton variant="text" width={400} height={800} />
+            </div>
+          </div>
+        </St.DetailContainer>
+      </div>
+    );
   }
 
-  if (isLoading) {
-    return <div>데이터를 로딩 중입니다.</div>;
+  if (isError) {
+    return <div>오류가 발생했습니다.</div>;
   }
 
   return (
-    <DetailContainer>
+    <St.DetailContainer>
       {storeData && (
         <>
           <div className="store-detail">
@@ -61,106 +186,104 @@ const StoreDetail = () => {
                 ))}
               </Slider>
             </div>
-            <div>
-              <h1>{storeData.title}</h1>
-              {/* <BookMark storeData={storeData} /> */}
-              <div className="store-body">{storeData.body}</div>
-              <div className="store-info">
-                <div>
+            <div className="store-info">
+              <St.TopBox>
+                <h1>{storeData.title}</h1>
+                <BookMark storeData={storeData} />
+              </St.TopBox>
+              <div className="store-body">
+                <div>{storeData.body}</div>
+              </div>
+              <div style={{ position: 'relative', fontSize: '18px' }} className="store-text">
+                <div style={{ display: 'flex', alignItems: 'center', margin: '20px 0 15px 0', fontSize: '18px' }}>
                   <span>위치</span> {storeData.location}
+                  <CopyToClipboard
+                    text={storeData.location}
+                    onCopy={() =>
+                      toast.info('주소가 복사되었습니다!', {
+                        className: 'custom-toast',
+                        theme: 'light'
+                      })
+                    }
+                  >
+                    <St.LocationIcon />
+                  </CopyToClipboard>
                 </div>
-                <div>
+                <div style={{ display: 'flex', alignItems: 'center', margin: '15px 0', fontSize: '18px' }}>
                   <span>기간</span> {storeData.period_start} ~ {storeData.period_end}
-                  {/* <Calendar storeData={storeData} /> */}
+                  <div
+                    style={{ display: 'flex', alignItems: 'center', margin: '0', fontSize: '18px' }}
+                    ref={calendarRef}
+                  >
+                    <St.CalendarIcon onClick={handleMouseEnter} />
+                    <St.CalendarClickInfo>← click !</St.CalendarClickInfo>
+                    <St.CalendarBox>{isClicked && <Calendar storeData={storeData} />}</St.CalendarBox>
+                  </div>
                 </div>
-                <div>
+                <div style={{ display: 'flex', alignItems: 'center', margin: '15px 0', fontSize: '18px' }}>
                   <span>운영 시간</span> {storeData.opening}
                 </div>
-                <div>
-                  <span>링크 </span>
-                  <LinkIcon
-                    onClick={() => {
-                      handleopenlink(storeData.link);
-                    }}
-                  />
+                <div style={{ display: 'flex', alignItems: 'center', margin: '15px 0', fontSize: '18px' }}>
+                  <span>예약 여부</span> {storeData.reservation ? '있음' : '없음'}
                 </div>
-                <button>후기 보러가기</button>
-                <button>팝업 메이트 구하기</button>
-                {/* <Share /> */}
+                <div style={{ display: 'flex', alignItems: 'center', margin: '15px 0', fontSize: '18px' }}>
+                  <span>링크 </span>
+                  <p onClick={() => handleopenlink(storeData.link)}>Visit the official page</p>
+                  <CopyToClipboard
+                    text={storeData.link}
+                    onCopy={() =>
+                      toast.info('주소가 복사되었습니다. 공식 페이지에서 더 자세한 정보를 확인하실 수 있습니다!', {
+                        className: 'custom-toast',
+                        theme: 'light'
+                      })
+                    }
+                  >
+                    <St.LinkIcon />
+                  </CopyToClipboard>
+                </div>
+              </div>
+              <div className="button-box">
+                <button
+                  style={{ fontWeight: '600', margin: '10px 5px', padding: '14px 25px' }}
+                  onClick={() => navigate('/review', { state: { storeId: id, storeTitle: storeData.title } })}
+                >
+                  후기 보러가기
+                </button>
+                <button
+                  style={{ fontWeight: '600', margin: '10px 15px', padding: '14px 25px' }}
+                  onClick={() => navigate('/mate', { state: { storeId: id, storeTitle: storeData.title } })}
+                >
+                  팝업 메이트 구하기
+                </button>
+                <St.ShareBtn
+                  id="basic-button"
+                  aria-controls={open ? 'basic-menu' : undefined}
+                  aria-haspopup="true"
+                  aria-expanded={open ? 'true' : undefined}
+                  onClick={handleClick}
+                >
+                  <IosShareIcon fontSize="small" />
+                </St.ShareBtn>
+                <St.ShareMenu
+                  id="basic-menu"
+                  anchorEl={anchorEl}
+                  open={open}
+                  onClose={handleClose}
+                  MenuListProps={{
+                    'aria-labelledby': 'basic-button'
+                  }}
+                >
+                  <St.ShareInfo>팝업스토어 정보 공유하기</St.ShareInfo>
+                  <Share storeData={storeData} onClick={handleClose} />
+                </St.ShareMenu>
               </div>
             </div>
           </div>
           <StoreMap storeLocation={storeData.location} title={storeData.title} />
         </>
       )}
-    </DetailContainer>
+    </St.DetailContainer>
   );
 };
 
 export default StoreDetail;
-
-const DetailContainer = styled.div`
-  max-width: 1920px;
-  min-width: 900px;
-  width: 50%;
-  margin: 70px auto;
-
-  .store-detail {
-    height: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 30px;
-
-    .image-slider {
-      width: 400px;
-      height: 340px;
-
-      div {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-
-        img {
-          width: 380px;
-          height: 320px;
-          object-fit: cover;
-          border: 3px solid var(--fifth-color);
-          border-radius: 10px;
-        }
-      }
-    }
-
-    h1 {
-      color: var(--fifth-color);
-      font-size: 24px;
-      background: linear-gradient(to top, var(--third-color) 50%, transparent 50%);
-    }
-
-    .store-body {
-      border-bottom: 2px dashed #65656587;
-      padding: 20px 20px 20px 0;
-    }
-
-    .store-info {
-      div {
-        display: flex;
-        align-items: center;
-        font-size: 16px;
-        margin: 12px 0;
-      }
-      span {
-        font-weight: 600;
-        margin-right: 10px;
-      }
-
-      button {
-        margin: 10px 20px 0 0;
-      }
-    }
-  }
-`;
-
-const LinkIcon = styled(InsertLinkIcon)`
-  cursor: pointer;
-`;

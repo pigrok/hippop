@@ -1,14 +1,16 @@
 import React from 'react';
 // 라이브러리
-import { FacebookShareButton, FacebookIcon, TwitterShareButton, TwitterIcon } from 'react-share';
+import { FacebookIcon, TwitterIcon } from 'react-share';
 import CopyToClipboard from 'react-copy-to-clipboard';
+// 타입
+import { ShareProps } from '../../types/props';
+// alert
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 // 스타일
-import { styled } from 'styled-components';
-// 소셜 링크 이미지
-import LinkIcon from '../../images/LinkIcon.png';
-import KakaoIcon from '../../images/kakaoIcon.png';
+import { St } from './style/St.Share';
 
-const Share = () => {
+const Share = ({ storeData }: ShareProps) => {
   // 현재 주소 가져오기
   const currentUrl = window.location.href;
 
@@ -16,24 +18,28 @@ const Share = () => {
 
   // 카카오톡 init
   Kakao.cleanup();
-  window.Kakao.init(`${process.env.REACT_APP_KAKAO_KEY}`);
+  window.Kakao.init(`${process.env.REACT_APP_KAKAO_JS_APP_KEY}`);
 
   // 카카오톡 링크 공유
   const shareKakao = () => {
     Kakao.Share.sendDefault({
       objectType: 'feed',
       content: {
-        title: 'HiPPOP, 팝업의 모든 것',
-        description: '다양한 팝업스토어 정보를 제공 해드립니다!',
-        imageUrl: 'https://jlmwyvwmjcanbthgkpmh.supabase.co/storage/v1/object/public/images/store/kusmitea1.jpg',
+        title: 'FIND YOUR HIPPOP',
+        description: `${storeData.title} 팝업스토어에 대한 정보를 구경해 보세요!`,
+        imageUrl: `${process.env.REACT_APP_SUPABASE_STORAGE_URL}${storeData.images[0]}`,
         link: {
-          mobileWebUrl: currentUrl
+          mobileWebUrl: currentUrl,
+          webUrl: currentUrl
         }
       },
       buttons: [
         {
-          title: '자세히 보러 가기',
-          link: { mobileWebUrl: currentUrl }
+          title: '구경하러 가기',
+          link: {
+            mobileWebUrl: currentUrl,
+            webUrl: currentUrl
+          }
         }
       ]
     });
@@ -41,36 +47,28 @@ const Share = () => {
 
   return (
     <>
-      <KakaoBtn
-        className="grey-btn"
-        onClick={() => {
-          shareKakao();
-        }}
+      <St.KakaoBtn onClick={() => shareKakao()}>
+        <St.Img src="/asset/kakaoIcon.png" alt="카카오톡 아이콘" />
+      </St.KakaoBtn>
+      <St.FacebookBtn url={currentUrl}>
+        <FacebookIcon size={47} round={true} />
+      </St.FacebookBtn>
+      <St.TwitterBtn url={currentUrl}>
+        <TwitterIcon size={47} round={true} />
+      </St.TwitterBtn>
+      <CopyToClipboard
+        text={currentUrl}
+        onCopy={() =>
+          toast.info('주소가 복사되었습니다. :)', {
+            className: 'custom-toast',
+            theme: 'light'
+          })
+        }
       >
-        <Img src={KakaoIcon} alt="카카오톡 아이콘" />
-      </KakaoBtn>
-      <FacebookShareButton url={currentUrl}>
-        <FacebookIcon size={38} round={true} />
-      </FacebookShareButton>
-      <TwitterShareButton url={currentUrl}>
-        <TwitterIcon size={38} round={true} />
-      </TwitterShareButton>
-      <CopyToClipboard text={currentUrl} onCopy={() => alert('주소가 복사되었습니다.')}>
-        <Img src={LinkIcon} alt="링크 아이콘" />
+        <St.Img src="/asset/linkIcon.png" alt="링크 아이콘" />
       </CopyToClipboard>
     </>
   );
 };
 
 export default Share;
-
-const Img = styled.img`
-  width: 38px;
-`;
-
-const KakaoBtn = styled.button`
-  padding: 0;
-  margin: 0;
-  border: none;
-  background: none;
-`;

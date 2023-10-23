@@ -1,16 +1,12 @@
 import { useEffect, useState } from 'react';
-// 라이브러리
 import { useQuery } from '@tanstack/react-query';
-import { ToastContainer, toast } from 'react-toastify';
+import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-// api
+
 import { supabase } from '../../api/supabase';
 import { getSubList } from '../../api/subscribe';
-// zustand 상태관리 hook
 import { useCurrentUser } from '../../store/userStore';
-// 스타일
-import { styled } from 'styled-components';
-// mui
+
 import TextsmsIcon from '@mui/icons-material/Textsms';
 import BorderColorIcon from '@mui/icons-material/BorderColor';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
@@ -44,7 +40,6 @@ const Alarm = () => {
         filter: `user_id=in.(${subList})`
       },
       (payload) => {
-        console.log(payload);
         if (payload.new.ctg_index === 1) {
           setPostData(payload);
         }
@@ -60,7 +55,6 @@ const Alarm = () => {
         filter: `subscribe_to=eq.${currentUserId}`
       },
       (payload) => {
-        console.log(payload);
         setSubData(payload);
       }
     )
@@ -74,7 +68,6 @@ const Alarm = () => {
         filter: `receiver=eq.${currentUserId}`
       },
       (payload) => {
-        console.log(payload);
         setMsgData(payload);
       }
     )
@@ -91,26 +84,28 @@ const Alarm = () => {
         const { data: user } = await supabase.from('user').select('*').eq('id', writerId).single();
 
         if (user) {
-          // 메세지에 들어갈 내용 세팅
+          // 알림 메시지에 들어갈 내용 세팅
           const writerName = user.name;
           const newAlarm = {
             ctg_index: 1,
             created_at: postData.commit_timestamp,
             targetUserId: currentUserId,
             content: `${writerName}님의 새 게시글: ${postData.new.title}`,
-            post_id: postData.new.id
+            post_id: postData.new.id,
+            post_isdeleted: postData.new.isdeleted
           };
 
-          // 메세지 테이블에 DB 추가
+          // 알림 테이블에 DB 추가
           await supabase.from('alarm').insert(newAlarm);
 
-          // 메세지 테이블에서 알람 데이터 가져오기
+          // 알림 테이블에서 알람 데이터 가져오기
           const { data: alarm } = await supabase
             .from('alarm')
             .select('*')
             .eq('targetUserId', currentUserId)
-            .order('created_at', { ascending: true });
+            .order('created_at', { ascending: true }); // 오름차순
 
+          // 가장 최신 데이터를 실시간 알림으로 전달하기
           if (alarm) {
             toast.info(alarm[alarm.length - 1]?.content, {
               theme: 'light',
@@ -196,11 +191,9 @@ const Alarm = () => {
             .eq('targetUserId', currentUserId)
             .order('created_at', { ascending: true });
 
-          console.log(alarm?.length);
-
           if (alarm) {
             toast.info(alarm[alarm.length - 1]?.content, {
-              theme: 'dark',
+              theme: 'colored',
               icon: <TextsmsIcon />
             });
           }
@@ -211,49 +204,7 @@ const Alarm = () => {
     }
   }, [msgData, currentUserId]);
 
-  return (
-    <div>
-      <AlarmContainer
-        position="top-left"
-        autoClose={3000}
-        // hideProgressBar={true}
-        newestOnTop={true}
-        // closeOnClick={true}
-        // rtl={true}
-        pauseOnFocusLoss={false}
-        draggable={true}
-        pauseOnHover={true}
-        // limit={3}
-      />
-    </div>
-  );
+  return <></>;
 };
 
 export default Alarm;
-
-const AlarmContainer = styled(ToastContainer)`
-  .Toastify__toast {
-    font-size: 15px;
-    /* border-radius: 50px; */
-    padding: 15px 20px;
-    color: #ffffff;
-    /* background: rgba(107, 115, 135, 0.8); */
-  }
-
-  .Toastify__toast-icon {
-    width: 20px;
-    height: 20px;
-  }
-
-  .Toastify__toast--info {
-    background: #136e65;
-  }
-
-  /* .Toastify__toast--success {
-    background: rgba(48, 173, 120, 0.8);
-  } */
-
-  /* .Toastify__toast--error {
-    background: rgba(224, 72, 82, 0.8);
-  } */
-`;

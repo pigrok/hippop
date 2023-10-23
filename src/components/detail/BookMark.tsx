@@ -3,16 +3,17 @@ import React from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 // api
 import { fetchAllBookMark, toggleBookMark } from '../../api/bookmark';
+// zustand store
+import { useCurrentUser } from '../../store/userStore';
 // 타입
 import { Bookmark } from '../../types/types';
-// props타입
 import { CalendarProps } from '../../types/props';
+// mui
+import { Skeleton } from '@mui/material';
 // 스타일
-import { styled } from 'styled-components';
-// 이미지
-import oBookMark from '../../images/obookmark.png';
-import xBookMark from '../../images/xbookmark.png';
-import { useCurrentUser } from '../../store/userStore';
+import { St } from './style/St.BookMark';
+// alert
+import { toast } from 'react-toastify';
 
 const BookMark = ({ storeData }: CalendarProps) => {
   // 북마크 전체 조회
@@ -21,9 +22,8 @@ const BookMark = ({ storeData }: CalendarProps) => {
   // store의 id 가져오기
   const storeId = storeData.id;
 
-  // 로그인한
+  // 로그인한 유저
   const currentUser = useCurrentUser();
-  // console.log('북마크 currentUser', typeof currentUser);
 
   // Query
   const queryClient = useQueryClient();
@@ -38,44 +38,49 @@ const BookMark = ({ storeData }: CalendarProps) => {
   // 토글 핸들러
   const onClickToggle = () => {
     if (currentUser) {
-      // Check if currentUser is not null
       const toogleBookMark: Bookmark = {
         user_id: currentUser.id ?? '',
         store_id: storeId
       };
       toggleMutation.mutate(toogleBookMark);
+    } else {
+      toast.info('로그인을 해주세요 ! :)', {
+        className: 'custom-toast',
+        theme: 'light'
+      });
+      return;
     }
   };
-
-  // 스토어 필터링 북마크 카운트
-  const CountTotalBookMark = bookMark?.filter((item) => item.store_id === storeId).length;
 
   // 스토어, 유저 필터링 북마크 카운트
   const CountMyBookMark = bookMark?.filter(
     (item) => currentUser && item.user_id === currentUser.id && item.store_id === storeId
   ).length;
 
-  if (isError) {
-    return <div>데이터를 가져오는 도중 오류가 발생했습니다.</div>;
+  if (isLoading) {
+    return (
+      <div style={{ marginLeft: '30px' }}>
+        <Skeleton variant="text" width={70} height={50} />
+      </div>
+    );
   }
 
-  if (isLoading) {
-    return <div>데이터를 로딩 중입니다.</div>;
+  if (isError) {
+    return <div>오류가 발생했습니다.</div>;
   }
 
   return (
     <>
       {CountMyBookMark !== undefined && (
         <>
-          {CountTotalBookMark} /
           {CountMyBookMark > 0 ? (
-            <BookMarkBtn onClick={onClickToggle}>
-              <Img src={oBookMark} alt="o" />
-            </BookMarkBtn>
+            <St.BookMarkBtn onClick={onClickToggle}>
+              <St.BookMarkOn sx={{ fontSize: 50 }} />
+            </St.BookMarkBtn>
           ) : (
-            <BookMarkBtn onClick={onClickToggle}>
-              <Img src={xBookMark} alt="x" />
-            </BookMarkBtn>
+            <St.BookMarkBtn onClick={onClickToggle}>
+              <St.BookMarkOff sx={{ fontSize: 50 }} />
+            </St.BookMarkBtn>
           )}
         </>
       )}
@@ -84,14 +89,3 @@ const BookMark = ({ storeData }: CalendarProps) => {
 };
 
 export default BookMark;
-
-const Img = styled.img`
-  width: 30px;
-  height: 30px;
-`;
-const BookMarkBtn = styled.button`
-  padding: 0;
-  margin: 0;
-  border: none;
-  background: none;
-`;

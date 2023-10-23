@@ -1,15 +1,21 @@
-import React, { useMemo, useState } from 'react';
-
 import moment from 'moment';
+import shortid from 'shortid';
+import { useNavigate } from 'react-router';
+import React, { useMemo, useState } from 'react';
+import 'react-toastify/dist/ReactToastify.css';
+import { ToastContainer, toast } from 'react-toastify';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { CommentProps } from '../../../types/props';
-import { createComment, deleteComment, getComments, updateComment } from '../../../api/comment';
 import { Comment } from '../../../types/types';
+import { CommentProps } from '../../../types/props';
 import { useCurrentUser } from '../../../store/userStore';
-import { styled } from 'styled-components';
+import { createComment, deleteComment, getComments, updateComment } from '../../../api/comment';
+
+import { Skeleton } from '@mui/material';
+import { St } from './style/St.Comments';
 
 const Comments = ({ postId }: CommentProps) => {
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const currentUser = useCurrentUser();
   const [body, setBody] = useState<string>('');
@@ -68,15 +74,26 @@ const Comments = ({ postId }: CommentProps) => {
   const createButton = () => {
     // 유효성 검사
     if (!currentUser) {
-      alert('로그인을 해주세요.');
+      toast.info('로그인을 해주세요', {
+        className: 'custom-toast',
+        theme: 'light'
+      });
       setBody('');
       return;
     }
     if (!body) {
-      return alert('댓글을 입력해주세요.');
+      toast.info('댓글을 입력해주세요.', {
+        className: 'custom-toast',
+        theme: 'light'
+      });
+      return;
     }
-    if (body.length > 50) {
-      return alert('댓글은 50글자 미만으로 입력해주세요.');
+    if (body.length > 35) {
+      toast.info('댓글은 35글자 미만으로 입력해주세요.', {
+        className: 'custom-toast',
+        theme: 'light'
+      });
+      return;
     }
     // 새로운 댓글 객체 선언
     const newComment = {
@@ -100,10 +117,14 @@ const Comments = ({ postId }: CommentProps) => {
     const confirm = window.confirm('댓글을 삭제하시겠습니까?');
     if (confirm) {
       // DB 수정
-      deleteMutation.mutate(id);
 
+      deleteMutation.mutate(id);
       // 삭제 완료
-      alert('삭제되었습니다!');
+      toast.info('삭제되었습니다!', {
+        className: 'custom-toast',
+        theme: 'light'
+      });
+      // alert('삭제되었습니다!');
     }
   };
 
@@ -131,184 +152,148 @@ const Comments = ({ postId }: CommentProps) => {
     }
   };
 
+  // 프로필로 넘어가기
+  const naviProfile = (userId: string | undefined) => {
+    navigate(`/yourpage/${shortid.generate()}`, { state: { userId: userId } });
+  };
+
   if (isLoading) {
-    return <div>로딩중입니다.</div>;
+    return (
+      <div>
+        <St.Layout>
+          {/* 댓글 입력창 */}
+          <St.CommentWrite>
+            <Skeleton variant="text" width={40} height={30} />
+            <div style={{ display: 'flex' }}>
+              <Skeleton variant="text" width={750} height={50} />
+              <div style={{ marginLeft: '30px' }}>
+                <Skeleton variant="text" width={70} height={50} />
+              </div>
+            </div>
+          </St.CommentWrite>
+          {/* 댓글 목록 */}
+          <St.CommentContainer>
+            <St.ButtonBox>
+              <div style={{ marginRight: '20px' }}></div>
+              <div style={{ marginRight: '12px' }}></div>
+            </St.ButtonBox>
+            <Skeleton variant="text" width={870} height={80} />
+            <St.ButtonBox>
+              <div style={{ marginRight: '20px' }}></div>
+              <div style={{ marginRight: '12px' }}></div>
+            </St.ButtonBox>
+            <Skeleton variant="text" width={870} height={80} />
+            {/* <CommentBox></CommentBox> */}
+          </St.CommentContainer>
+          {/* 더보기 버튼 */}
+        </St.Layout>
+      </div>
+    );
   }
   if (isError) {
     return <div>오류가 발생했습니다.</div>;
   }
   return (
-    <Layout>
+    <St.Layout>
+      <ToastContainer
+        position="top-center"
+        autoClose={3000}
+        newestOnTop={true}
+        pauseOnFocusLoss={false}
+        draggable={true}
+        pauseOnHover={true}
+        limit={1}
+        style={{ zIndex: 9999 }}
+      />
       {/* 댓글 입력창 */}
-      <CommentWrite>
-        <Title>댓글</Title>
-        <Input
-          value={body}
-          onChange={onChangeBody}
-          onKeyPress={(e) => {
-            if (e.key === 'Enter') {
-              createButton();
-            }
-          }}
-          placeholder="댓글을 입력해주세요."
-        />
-        <button className="custom-btn" onClick={createButton}>
-          등록
-        </button>
-      </CommentWrite>
-      {/* 댓글 목록 */}
-      <CommentContainer>
-        {selectComments?.map((comment) => {
-          return (
+      <St.CommentWrite>
+        <St.Title>댓글</St.Title>
+        <St.WriteBox>
+          {currentUser ? (
             <>
-              {currentUser?.id === comment.user_id && (
-                <ButtonBox>
-                  <Button onClick={() => deleteButton(comment.id)}>삭제</Button>
-                  <Button onClick={() => editButton(comment)}>{isEditId ? '저장' : '수정'}</Button>
-                </ButtonBox>
-              )}
-              <CommentBox>
-                <DateBox>
-                  <Date>{moment(comment.created_at).format('YYYY.MM.DD HH:mm')}</Date>
-                </DateBox>
-                <ProfileBox>
-                  {comment.user.avatar_url.startsWith('profile/') ? (
-                    <Img
-                      src={`${process.env.REACT_APP_SUPABASE_STORAGE_URL}${comment.user.avatar_url}`}
-                      alt="User Avatar"
-                    />
-                  ) : (
-                    <Img src={comment.user.avatar_url} alt="User Avatar" />
-                  )}
-                  <Name>{comment.user.name}</Name>
-                </ProfileBox>
-                {isEditId === comment.id ? (
-                  <input value={edit} onChange={onChangeEdit} style={{ width: '50%' }} />
-                ) : (
-                  <Content>{comment.body}</Content>
-                )}
-              </CommentBox>
+              <St.Input
+                value={body}
+                onChange={onChangeBody}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    createButton();
+                  }
+                }}
+                placeholder="댓글을 입력해주세요."
+                disabled={!currentUser} // 로그인하지 않은 경우 input 비활성화
+              />
+              <button className="custom-btn" onClick={createButton}>
+                등록
+              </button>
             </>
-          );
-        })}
-      </CommentContainer>
+          ) : (
+            <>
+              <St.Input
+                value={body}
+                onChange={onChangeBody}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    createButton();
+                  }
+                }}
+                placeholder="로그인 후 댓글을 입력해주세요."
+                disabled={!currentUser}
+              />
+              <button className="custom-btn" onClick={createButton}>
+                등록
+              </button>
+            </>
+          )}
+        </St.WriteBox>
+      </St.CommentWrite>
+      {/* 댓글 목록 */}
+      {selectComments?.map((comment) => {
+        return (
+          <St.CommentContainer key={comment.id}>
+            {currentUser?.id === comment.user_id && (
+              <St.ButtonBox>
+                <St.Button onClick={() => deleteButton(comment.id)}>삭제</St.Button>
+                <St.Button onClick={() => editButton(comment)}>{isEditId ? '저장' : '수정'}</St.Button>
+              </St.ButtonBox>
+            )}
+            <St.CommentBox>
+              <St.DateBox>
+                <St.Date>{moment(comment.created_at).format('YYYY.MM.DD HH:mm')}</St.Date>
+              </St.DateBox>
+              <St.ProfileBox>
+                {comment.user.avatar_url && (
+                  <St.Img
+                    src={`${process.env.REACT_APP_SUPABASE_STORAGE_URL}${comment.user.avatar_url}`}
+                    alt="User Avatar"
+                    onClick={() => {
+                      naviProfile(comment.user.id);
+                    }}
+                  />
+                )}
+
+                <St.Name
+                  onClick={() => {
+                    naviProfile(comment.user.id);
+                  }}
+                >
+                  {comment.user.name}
+                </St.Name>
+              </St.ProfileBox>
+              {isEditId === comment.id ? (
+                <St.EditInput value={edit} onChange={onChangeEdit} />
+              ) : (
+                <St.Content>{comment.body}</St.Content>
+              )}
+            </St.CommentBox>
+          </St.CommentContainer>
+        );
+      })}
       {/* 더보기 버튼 */}
-      {showButton && hasNextPage && <MoreButton onClick={fetchMore}>더보기</MoreButton>}
-    </Layout>
+      <St.MoreButtonBox>
+        {showButton && hasNextPage && <St.MoreButton onClick={fetchMore}>더보기</St.MoreButton>}
+      </St.MoreButtonBox>
+    </St.Layout>
   );
 };
 
 export default Comments;
-
-const Layout = styled.div`
-  min-width: 900px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-
-  .custom-btn {
-    width: 120px;
-    background-color: var(--second-color);
-    border-radius: 0 18px 18px 0;
-    padding: 10px 16px;
-    font-size: 18px;
-    font-weight: 700;
-  }
-`;
-
-const CommentWrite = styled.div`
-  width: 900px;
-  padding: 20px 0;
-`;
-
-const Title = styled.div`
-  font-size: 18px;
-  font-weight: 700;
-  padding: 10px;
-`;
-
-const Input = styled.input`
-  width: 744px;
-  height: 40px;
-  padding: 2px 15px;
-  outline: none;
-  border-radius: 20px 0 0 20px;
-  border: 2px solid var(--fifth-color);
-`;
-
-const CommentContainer = styled.div`
-  margin-bottom: 20px;
-`;
-
-const ButtonBox = styled.div`
-  width: 900px;
-  display: flex;
-  justify-content: right;
-  margin: 5px 0px;
-`;
-
-const Button = styled.button`
-  width: 60px;
-  height: 32px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--second-color);
-  background-color: var(--third-color);
-  margin-right: 5px;
-`;
-
-const CommentBox = styled.div`
-  width: 880px;
-  padding: 10px;
-  margin: 5px 0;
-  background-color: #fff;
-  border-radius: 18px;
-  border: 2px solid var(--fifth-color);
-`;
-
-const DateBox = styled.div`
-  display: flex;
-  float: right;
-  align-items: center;
-  padding: 0 10px;
-`;
-
-const Date = styled.div`
-  display: flex;
-  align-items: center;
-  padding: 14px 0;
-  font-size: 14px;
-`;
-
-const ProfileBox = styled.div`
-  width: 150px;
-  display: flex;
-  float: left;
-  align-items: center;
-  padding: 0 20px;
-`;
-
-const Img = styled.img`
-  width: 40px;
-  height: 40px;
-  object-fit: cover;
-  border-radius: 50%;
-`;
-
-const Name = styled.div`
-  font-weight: 600;
-  padding: 0 20px;
-`;
-
-const Content = styled.div`
-  display: flex;
-  align-items: center;
-  padding: 12px 0;
-`;
-
-const MoreButton = styled.button`
-  width: 100px;
-  font-weight: 600;
-  margin: 10px 0 20px 0;
-`;

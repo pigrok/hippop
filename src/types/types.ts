@@ -10,6 +10,8 @@ export interface Store {
   opening: string;
   images: string[];
   link: string;
+  isclosed: boolean;
+  reservation: boolean;
 }
 
 // Kakao 타입 선언
@@ -37,7 +39,7 @@ export interface PostType {
   ctg_index: number;
   title: string;
   body: any;
-  isDeleted: boolean;
+  isdeleted: boolean;
   store: { title: string };
 }
 
@@ -48,6 +50,7 @@ export interface NewPost {
   title: string;
   body: string;
 }
+
 export interface UpdatePost {
   id: number;
   title: string;
@@ -61,7 +64,7 @@ export interface Comment {
   user_id: string;
   post_id: number;
   body: string;
-  isDeleted: boolean;
+  isdeleted: boolean;
 }
 
 export interface NewComment {
@@ -91,7 +94,7 @@ export interface FetchsStore {
 }
 
 export interface FetchPost {
-  posts: PostType[];
+  posts: any;
   page: number;
   totalPages: number;
   count: number | null;
@@ -116,11 +119,11 @@ export interface AlarmType {
   content: string;
   isRead: boolean;
   post_id: number | null;
+  post_isdeleted: boolean | null;
   sub_from: string | null;
   ctg_index: number;
 }
 
-// 지오코딩 타입 선언
 export interface Geocoder {
   address: AddressInfo;
   address_name: string;
@@ -130,7 +133,6 @@ export interface Geocoder {
   y: string;
 }
 
-// 번지수 주소 타입 선언
 export interface AddressInfo {
   address_name: string;
   b_code: string;
@@ -143,7 +145,6 @@ export interface AddressInfo {
   region_3depth_name: string;
 }
 
-// 도로명 주소 타입 선언
 export interface RoadAddress {
   address_name: string;
   building_name: string;
@@ -157,7 +158,6 @@ export interface RoadAddress {
   zone_no: string;
 }
 
-// 핫플레이스 타입 선언
 export interface HotPlaceInfo {
   address_name: string;
   category_group_code: string;
@@ -178,6 +178,8 @@ export interface MessageType {
   receiver: string;
   body: string;
   isRead: boolean;
+  isSender: boolean;
+  isReceiver: boolean;
 
   from: UserMsgType;
   to: UserMsgType;
@@ -188,4 +190,12 @@ export interface MessageType {
 export interface UserMsgType {
   avatar_url?: string;
   name?: string;
+}
+
+export interface ReviewProps {
+  selectItems: PostType[];
+}
+
+export interface SliderButton {
+  onClick?: React.MouseEventHandler<HTMLButtonElement>;
 }
